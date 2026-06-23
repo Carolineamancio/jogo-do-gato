@@ -1,0 +1,714 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cat Snack Bar</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: radial-gradient(circle at top, #ffe7b2, #f2c07b 35%, #d2804d 100%);
+      color: #2b2330;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+    .app {
+      width: min(100%, 1160px);
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 20px;
+    }
+    .panel {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 28px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.7);
+      overflow: hidden;
+    }
+    .panel-header {
+      background: linear-gradient(135deg, #f8c07f, #f7b25c);
+      padding: 24px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.9);
+    }
+    .panel-header h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      color: #512f1f;
+    }
+    .panel-body {
+      padding: 20px;
+    }
+    .stats {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      background: #fff8ef;
+      border: 1px solid #f5deb7;
+      border-radius: 16px;
+      font-weight: 700;
+    }
+    .stat span {
+      color: #8b5a29;
+    }
+    .instructions {
+      padding: 14px 16px;
+      background: #fff7f0;
+      border-radius: 16px;
+      border: 1px solid #f3dcc2;
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    button {
+      flex: 1;
+      padding: 14px 16px;
+      border: none;
+      border-radius: 16px;
+      background: #f39c3f;
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.18s ease, background 0.18s ease;
+    }
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      background: #d8842e;
+    }
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .footer-note {
+      margin-top: 18px;
+      font-size: 0.95rem;
+      color: #6b4f3d;
+    }
+    .board {
+      position: relative;
+      background: linear-gradient(180deg, #f6e8c7 0%, #ebcfa0 100%);
+      border-radius: 32px;
+      box-shadow: 0 32px 90px rgba(0,0,0,0.18);
+      overflow: hidden;
+      min-height: 620px;
+    }
+    .board::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        90deg,
+        rgba(255,255,255,0.24) 0 20px,
+        transparent 20px 40px
+      );
+      opacity: 0.25;
+    }
+    .board-header {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 2;
+    }
+    .board-header h2 {
+      margin: 0;
+      font-size: 1.2rem;
+      letter-spacing: 0.04em;
+      color: #5e3f27;
+    }
+    .board-header .label {
+      background: rgba(255,255,255,0.85);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      color: #7a4d2d;
+      border: 1px solid #f7e3c5;
+    }
+    .grid {
+      position: absolute;
+      inset: 80px 20px 20px 20px;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(5, 1fr);
+      gap: 10px;
+      z-index: 1;
+    }
+    .tile {
+      background: rgba(255,255,255,0.55);
+      border-radius: 18px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.9);
+      position: relative;
+    }
+    .tile.furnace {
+      background: linear-gradient(180deg, #f6d8c1 0%, #d88751 100%);
+      border: 2px solid #f4bf9b;
+    }
+    .tile.serve {
+      background: linear-gradient(180deg, #f7e9e5 0%, #f3d0b9 100%);
+      border: 2px solid #f0c9a2;
+    }
+    .tile.queue {
+      background: linear-gradient(180deg, #fff5e4 0%, #fde4bb 100%);
+      border: 2px dashed #f4d3aa;
+    }
+    .tile .tile-label {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
+      font-size: 0.8rem;
+      color: #5b3a21;
+      font-weight: 700;
+      text-align: center;
+    }
+    .furnace-icon {
+      position: absolute;
+      left: 50%;
+      top: 18px;
+      width: 48px;
+      height: 38px;
+      transform: translateX(-50%);
+      background: #874d23;
+      border-radius: 18px 18px 8px 8px;
+      box-shadow: inset 0 0 0 4px #f4c69a;
+    }
+    .furnace-icon::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: -16px;
+      width: 28px;
+      height: 28px;
+      transform: translateX(-50%);
+      background: radial-gradient(circle at 40% 30%, #f9f1d1, #f6af3b 65%, transparent 90%);
+      border-radius: 50%;
+    }
+    .furnace-icon::after {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 10px;
+      width: 6px;
+      height: 14px;
+      background: #ffb73b;
+      border-radius: 999px;
+      box-shadow: 12px 0 0 #ffb73b, 24px 0 0 #ffb73b;
+    }
+    .cat {
+      position: absolute;
+      width: 110px;
+      height: 130px;
+      left: 212px;
+      top: 354px;
+      transform: translate(-50%, -50%);
+      z-index: 3;
+      transition: left 0.14s ease, top 0.14s ease;
+    }
+    .cat-body {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: 100px;
+      height: 106px;
+      background: #f4ba77;
+      border-radius: 56px 56px 52px 52px;
+      transform: translateX(-50%);
+      box-shadow: inset -8px -10px 0 rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .cat-body::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 8px;
+      width: 90px;
+      height: 78px;
+      background: #f4ba77;
+      border-radius: 50%;
+      transform: translateX(-50%);
+    }
+    .cat-ear {
+      position: absolute;
+      top: -2px;
+      width: 24px;
+      height: 28px;
+      background: #f4ba77;
+      border-radius: 42% 42% 14% 14%;
+      border: 2px solid rgba(0,0,0,0.08);
+      z-index: 4;
+    }
+    .cat-ear.left { left: 14px; transform: rotate(-4deg); }
+    .cat-ear.right { right: 14px; transform: rotate(4deg); }
+    .cat-inner-ear {
+      position: absolute;
+      width: 10px;
+      height: 14px;
+      background: #f8d2a4;
+      border-radius: 50% 50% 0 0;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+    }
+    .cat-inner-ear.left { left: 18px; }
+    .cat-inner-ear.right { right: 18px; left: auto; }
+    .cat-face {
+      position: absolute;
+      left: 50%;
+      top: 18px;
+      width: 70px;
+      height: 58px;
+      transform: translateX(-50%);
+      z-index: 3;
+    }
+    .cat-eyebrow {
+      position: absolute;
+      width: 18px;
+      height: 8px;
+      background: #3b2416;
+      border-radius: 999px;
+      top: 0;
+    }
+    .cat-eyebrow.left { left: 6px; transform: rotate(15deg); }
+    .cat-eyebrow.right { right: 6px; transform: rotate(-15deg); }
+    .cat-eye {
+      position: absolute;
+      top: 18px;
+      width: 16px;
+      height: 16px;
+      background: #3b2416;
+      border-radius: 999px;
+    }
+    .cat-eye.left { left: 10px; }
+    .cat-eye.right { right: 10px; }
+    .cat-nose {
+      position: absolute;
+      left: 50%;
+      top: 34px;
+      width: 10px;
+      height: 8px;
+      background: #9f664a;
+      border-radius: 50%;
+      transform: translateX(-50%);
+    }
+    .cat-mouth {
+      position: absolute;
+      left: 50%;
+      top: 44px;
+      width: 24px;
+      height: 12px;
+      border-bottom: 3px solid #3b2416;
+      border-radius: 0 0 14px 14px;
+      transform: translateX(-50%);
+    }
+    .cat-stripe {
+      position: absolute;
+      background: #d29960;
+      border-radius: 18px;
+    }
+    .cat-stripe.stripe1 { width: 18px; height: 6px; top: 12px; left: 28px; transform: rotate(12deg); }
+    .cat-stripe.stripe2 { width: 18px; height: 6px; top: 18px; right: 28px; transform: rotate(-12deg); }
+    .cat-scarf {
+      position: absolute;
+      left: 50%;
+      top: 64px;
+      width: 82px;
+      height: 20px;
+      background: #4da975;
+      border-radius: 999px 999px 14px 14px;
+      transform: translateX(-50%);
+      box-shadow: inset 0 4px 0 rgba(255,255,255,0.18);
+      z-index: 2;
+    }
+    .cat-belly {
+      position: absolute;
+      left: 50%;
+      bottom: 12px;
+      width: 66px;
+      height: 52px;
+      background: #fff6e2;
+      border-radius: 50%;
+      transform: translateX(-50%);
+      z-index: 1;
+    }
+    .cat-spot {
+      position: absolute;
+      background: #d29960;
+      border-radius: 50%;
+      opacity: 0.95;
+    }
+    .cat-spot.top { width: 24px; height: 16px; top: 24px; left: 14px; }
+    .cat-spot.side { width: 22px; height: 14px; bottom: 26px; right: 16px; }
+    .cat-paw {
+      position: absolute;
+      width: 18px;
+      height: 14px;
+      background: #f4ba77;
+      border-radius: 50%;
+      bottom: 8px;
+      box-shadow: inset -2px -2px 0 rgba(0,0,0,0.08);
+      z-index: 2;
+    }
+    .cat-paw.left { left: 16px; }
+    .cat-paw.right { right: 16px; }
+    .cat-food {
+      position: absolute;
+      left: 50%;
+      bottom: 44px;
+      width: 24px;
+      height: 12px;
+      background: radial-gradient(circle at 50% 30%, #ffe29d, #e38d35);
+      border-radius: 50% 50% 40% 40%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.16s ease;
+      z-index: 4;
+    }
+    .cat.food-ready .cat-food {
+      opacity: 1;
+    }
+    .service-counter {
+      position: absolute;
+      width: 100%;
+      height: 88px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(248,218,182,0.96));
+      bottom: 20px;
+      left: 0;
+      border-top-left-radius: 30px;
+      border-top-right-radius: 30px;
+      border: 1px solid rgba(255,255,255,0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 14px;
+      padding: 0 18px;
+      z-index: 2;
+    }
+    .service-counter .counter-label {
+      background: rgba(255,255,255,0.9);
+      padding: 10px 14px;
+      border-radius: 999px;
+      color: #7a4d2d;
+      font-weight: 700;
+      border: 1px solid #f1d5b2;
+    }
+    .queue-panel {
+      position: absolute;
+      right: 18px;
+      top: 108px;
+      width: 120px;
+      display: grid;
+      gap: 10px;
+      z-index: 2;
+    }
+    .queue-panel .queue-title {
+      font-weight: 700;
+      color: #5e3f27;
+      margin-bottom: 4px;
+    }
+    .queue-item {
+      background: rgba(255,255,255,0.92);
+      border: 1px solid #f3dcc2;
+      border-radius: 18px;
+      padding: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 48px;
+      font-size: 1.5rem;
+      box-shadow: 0 10px 16px rgba(0,0,0,0.08);
+    }
+    .queue-empty {
+      color: #8b5a29;
+      font-size: 0.95rem;
+      text-align: center;
+    }
+    .text-bubble {
+      position: absolute;
+      top: 24px;
+      left: 22px;
+      padding: 10px 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.95);
+      border: 1px solid #f3dcc2;
+      color: #5c3f27;
+      font-size: 0.95rem;
+      max-width: 220px;
+      line-height: 1.4;
+      box-shadow: 0 14px 32px rgba(0,0,0,0.1);
+      z-index: 2;
+    }
+    .footer-decor {
+      position: absolute;
+      right: 30px;
+      bottom: 18px;
+      color: rgba(92,60,33,0.15);
+      font-size: 6rem;
+      transform: rotate(-8deg);
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="panel">
+      <div class="panel-header">
+        <h1>Cat Snack Bar</h1>
+      </div>
+      <div class="panel-body">
+        <div class="stats">
+          <div class="stat">Clientes na fila: <span id="queue-count">5</span></div>
+          <div class="stat">Servidos: <span id="served-count">0</span></div>
+          <div class="stat">Tempo de cozimento: <span id="timer-count">0</span>s</div>
+        </div>
+        <div class="instructions">
+          Use as setas do teclado para mover o gato. Leve-o até o forno para cozinhar e depois vá ao balcão de entrega para servir o cliente.
+        </div>
+        <div class="button-row">
+          <button id="cook-button" disabled>Cozinhar</button>
+          <button id="serve-button" disabled>Servir</button>
+          <button id="reset-button">Reiniciar</button>
+        </div>
+        <div class="footer-note">
+          Dica: o gato só pode cozinhar quando estiver sobre o forno. Ao servir, ele precisa estar no balcão com comida pronta.
+        </div>
+      </div>
+    </section>
+
+    <section class="board" tabindex="0">
+      <div class="board-header">
+        <h2>Restaurante do Gato</h2>
+        <span class="label">Modo Simulação</span>
+      </div>
+      <div class="text-bubble" id="message-box">Use as setas para mover o gato até o forno.</div>
+      <div class="queue-panel" id="queue-panel"></div>
+      <div class="grid" id="grid-board"></div>
+      <div class="service-counter">
+        <span class="counter-label">Balcão de entrega</span>
+      </div>
+      <div class="footer-decor">CAT</div>
+      <div class="cat" id="cat">
+          <div class="cat-body">
+            <div class="cat-ear left">
+              <div class="cat-inner-ear left"></div>
+            </div>
+            <div class="cat-ear right">
+              <div class="cat-inner-ear right"></div>
+            </div>
+            <div class="cat-face">
+              <div class="cat-eyebrow left"></div>
+              <div class="cat-eyebrow right"></div>
+              <div class="cat-eye left"></div>
+              <div class="cat-eye right"></div>
+              <div class="cat-nose"></div>
+              <div class="cat-mouth"></div>
+            </div>
+            <div class="cat-stripe stripe1"></div>
+            <div class="cat-stripe stripe2"></div>
+            <div class="cat-spot top"></div>
+            <div class="cat-spot side"></div>
+            <div class="cat-scarf"></div>
+            <div class="cat-belly"></div>
+            <div class="cat-paw left"></div>
+            <div class="cat-paw right"></div>
+            <div class="cat-food" id="cat-food"></div>
+          </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const board = document.getElementById('grid-board');
+    const queuePanel = document.getElementById('queue-panel');
+    const queueCount = document.getElementById('queue-count');
+    const servedCount = document.getElementById('served-count');
+    const timerCount = document.getElementById('timer-count');
+    const messageBox = document.getElementById('message-box');
+    const cookButton = document.getElementById('cook-button');
+    const serveButton = document.getElementById('serve-button');
+    const resetButton = document.getElementById('reset-button');
+    const cat = document.getElementById('cat');
+    const catFood = document.getElementById('cat-food');
+
+    const cols = 8;
+    const rows = 5;
+    const tileSize = 80;
+    const start = { x: 1, y: 4 };
+    const oven = { x: 2, y: 1 };
+    const serve = { x: 6, y: 3 };
+    const customers = ['🐱', '🐶', '🐰', '🐼', '🦊'];
+
+    let queue = [];
+    let served = 0;
+    let catPos = { ...start };
+    let cooking = false;
+    let foodReady = false;
+    let timer = 0;
+    let timerId = null;
+
+    function createBoard() {
+      board.innerHTML = '';
+      for (let y = 0; y < rows; y += 1) {
+        for (let x = 0; x < cols; x += 1) {
+          const tile = document.createElement('div');
+          tile.className = 'tile';
+          if (x === oven.x && y === oven.y) tile.classList.add('furnace');
+          if (x === serve.x && y === serve.y) tile.classList.add('serve');
+          if (x === cols - 1) tile.classList.add('queue');
+          if (x === oven.x && y === oven.y) tile.innerHTML = '<div class="furnace-icon"></div><div class="tile-label">Forno</div>';
+          else if (x === serve.x && y === serve.y) tile.innerHTML = '<div class="tile-label">Entrega</div>';
+          board.appendChild(tile);
+        }
+      }
+    }
+
+    function renderQueue() {
+      queuePanel.innerHTML = '';
+      if (queue.length === 0) {
+        queuePanel.innerHTML = '<div class="queue-empty">Fila vazia!</div>';
+        return;
+      }
+      queue.forEach((customer, index) => {
+        const item = document.createElement('div');
+        item.className = 'queue-item';
+        item.textContent = customer;
+        queuePanel.appendChild(item);
+      });
+    }
+
+    function updateStats() {
+      queueCount.textContent = queue.length;
+      servedCount.textContent = served;
+      timerCount.textContent = timer;
+      cookButton.disabled = cooking || queue.length === 0 || !isOnOven();
+      serveButton.disabled = !foodReady || !isAtServeCounter();
+    }
+
+    function setCatPosition() {
+      const left = 20 + catPos.x * (tileSize + 10) + tileSize / 2;
+      const top = 80 + catPos.y * (tileSize + 10) + tileSize / 2;
+      cat.style.left = `${left}px`;
+      cat.style.top = `${top}px`;
+    }
+
+    function isOnOven() {
+      return catPos.x === oven.x && catPos.y === oven.y;
+    }
+
+    function isAtServeCounter() {
+      return catPos.x === serve.x && catPos.y === serve.y;
+    }
+
+    function showMessage(text) {
+      messageBox.textContent = text;
+    }
+
+    function resetGame() {
+      queue = [...customers];
+      served = 0;
+      cooking = false;
+      foodReady = false;
+      timer = 0;
+      if (timerId) { clearInterval(timerId); timerId = null; }
+      catPos = { ...start };
+      cat.classList.remove('food-ready');
+      createBoard();
+      renderQueue();
+      setCatPosition();
+      showMessage('Use as setas para mover o gato até o forno.');
+      updateStats();
+    }
+
+    function tickCook() {
+      if (timer === 0) {
+        clearInterval(timerId);
+        timerId = null;
+        cooking = false;
+        foodReady = true;
+        cat.classList.add('food-ready');
+        showMessage('Prato pronto! Vá servir no balcão.');
+        updateStats();
+        return;
+      }
+      timer -= 1;
+      showMessage(`Cozinhando... ${timer}s restantes.`);
+      updateStats();
+    }
+
+    function startCooking() {
+      if (cooking || !isOnOven() || queue.length === 0) return;
+      cooking = true;
+      timer = 3;
+      foodReady = false;
+      cat.classList.remove('food-ready');
+      showMessage('Gato começou a cozinhar...');
+      timerId = setInterval(tickCook, 1000);
+      tickCook();
+      updateStats();
+    }
+
+    function serveCustomer() {
+      if (!foodReady || !isAtServeCounter() || queue.length === 0) return;
+      const customer = queue.shift();
+      served += 1;
+      foodReady = false;
+      cat.classList.remove('food-ready');
+      showMessage(`Servido ${customer}! Leve o gato de volta ao forno.`);
+      renderQueue();
+      updateStats();
+    }
+
+    window.addEventListener('keydown', (event) => {
+      if (cooking) return;
+      const key = event.key;
+      let moved = false;
+      if (key === 'ArrowLeft' && catPos.x > 0) {
+        catPos.x -= 1; moved = true;
+      }
+      if (key === 'ArrowRight' && catPos.x < cols - 1) {
+        catPos.x += 1; moved = true;
+      }
+      if (key === 'ArrowUp' && catPos.y > 0) {
+        catPos.y -= 1; moved = true;
+      }
+      if (key === 'ArrowDown' && catPos.y < rows - 1) {
+        catPos.y += 1; moved = true;
+      }
+      if (!moved) return;
+      event.preventDefault();
+      setCatPosition();
+      if (isOnOven()) {
+        showMessage('Você está no forno. Clique em Cozinhar.');
+      } else if (isAtServeCounter()) {
+        showMessage('Você está no balcão de entrega. Clique em Servir quando tiver comida.');
+      } else {
+        showMessage('Continue se movendo pela cozinha.');
+      }
+      updateStats();
+    });
+
+    cookButton.addEventListener('click', startCooking);
+    serveButton.addEventListener('click', serveCustomer);
+    resetButton.addEventListener('click', resetGame);
+
+    resetGame();
+  </script>
+</body>
+</html>
